@@ -1,0 +1,121 @@
+# =========================
+# ENVIRONMENT VARIABLES
+# =========================
+.env
+.env.local
+.env.development
+.env.production
+
+# =========================
+# PYTHON CACHE
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# =========================
+# VIRTUAL ENVIRONMENTS
+# =========================
+venv/
+.venv/
+env/
+ENV/
+
+# =========================
+# IDE FILES
+# =========================
+
+# VS Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# =========================
+# OPERATING SYSTEM FILES
+# =========================
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# =========================
+# LOG FILES
+# =========================
+*.log
+logs/
+
+# =========================
+# DATABASE FILES
+# =========================
+*.sqlite3
+*.db
+
+# =========================
+# TEST / COVERAGE
+# =========================
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.cache/
+
+# =========================
+# BUILD FILES
+# =========================
+build/
+dist/
+*.egg-info/
+
+# =========================
+# JUPYTER
+# =========================
+.ipynb_checkpoints/
+
+# =========================
+# FASTAPI / UVICORN
+# =========================
+uvicorn.log
+
+# =========================
+# MYPY / TYPE CHECKING
+# =========================
+.mypy_cache/
+
+# =========================
+# PYTHON ENV CONFIG
+# =========================
+.python-version
+
+# =========================
+# TEMP FILES
+# =========================
+tmp/
+temp/
+
+# =========================
+# VECTOR / EMBEDDING FILES
+# =========================
+*.npy
+*.npz
+faiss_index/
+chroma_db/
+
+# =========================
+# SECRET FILES
+# =========================
+secrets.json
+credentials.json
+
+# =========================
+# DOCKER
+# =========================
+.dockerignore
+
+# =========================
+# RENDER / DEPLOYMENT
+# =========================
+.render/
