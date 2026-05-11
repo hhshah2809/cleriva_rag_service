@@ -44,12 +44,16 @@ async def startup_event():
 # CORS: allow from localhost/dev by default; update as needed in production
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://cleriva-frontend.vercel.app",
+        "https://cleriva-backend.onrender.com",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 app.include_router(upload_router, prefix="/api")
 app.include_router(retrieve_router, prefix="/api")
