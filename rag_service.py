@@ -12,7 +12,7 @@ from core.config import (
     SUPABASE_QUERY_NAME,
 )
 
-from core.embeddings import embeddings
+from core.embeddings import embeddings, embed_documents_batched
 
 LOG = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -119,8 +119,11 @@ def semantic_chunk_text(
             len(sentences)
         )
 
-        sentence_embeddings = embeddings.embed_documents(
-            sentences
+        # Use batched embeddings for sentence-level embeddings as well
+        sentence_embeddings = embed_documents_batched(
+            sentences,
+            batch_size=20,
+            concurrency=2,
         )
 
         current_chunk = [sentences[0]]
@@ -249,8 +252,11 @@ def ingest_docx_file(
             len(texts)
         )
 
-        embeddings_list = embeddings.embed_documents(
-            texts
+        # Use batched concurrent embedding helper
+        embeddings_list = embed_documents_batched(
+            texts,
+            batch_size=20,
+            concurrency=4,
         )
 
         rows = []
@@ -299,7 +305,8 @@ def ingest_docx_file(
 def retrieve(
     query: str,
     user_id: Optional[str] = None,
-    k: int = 5
+    k: int = 5,
+    retrieval_k: Optional[int] = None,
 ) -> List[Dict]:
     """
     Retrieve and rerank relevant chunks.
@@ -312,11 +319,24 @@ def retrieve(
 
         supabase = _get_supabase_client()
 
+        import time
+
+        timings = {}
+        start_total = time.perf_counter()
+
         # -----------------------------------
         # Generate query embedding
         # -----------------------------------
 
+        # Estimate token size (rough heuristic: word count)
+        try:
+            timings['query_tokens_estimate'] = len(query.split())
+        except Exception:
+            timings['query_tokens_estimate'] = None
+
+        t0 = time.perf_counter()
         query_embedding = embeddings.embed_query(query)
+        timings['query_embedding'] = time.perf_counter() - t0
 
         filter_data = {}
 
@@ -328,13 +348,18 @@ def retrieve(
             user_id
         )
 
+
         # -----------------------------------
         # HYBRID SEARCH
         # Retrieve MORE chunks for reranking
         # -----------------------------------
 
-        retrieval_k = 20
+        from core.config import ENABLE_RERANKER, RETRIEVAL_K_DEFAULT
 
+        if retrieval_k is None:
+            retrieval_k = RETRIEVAL_K_DEFAULT
+
+        t1 = time.perf_counter()
         response = supabase.rpc(
             SUPABASE_QUERY_NAME,
             {
@@ -344,6 +369,7 @@ def retrieve(
                 "filter": filter_data
             }
         ).execute()
+        timings['supabase_rpc'] = time.perf_counter() - t1
 
         matches = response.data or []
 
@@ -351,6 +377,8 @@ def retrieve(
             "Retrieved %d chunks before reranking",
             len(matches)
         )
+
+        timings['retrieved_count'] = len(matches)
 
         results = []
 
@@ -376,16 +404,30 @@ def retrieve(
         # RERANKING
         # -----------------------------------
 
-        LOG.info(
-            "Running reranker on %d chunks",
-            len(results)
-        )
+        # Optionally run reranker
+        from core.config import ENABLE_RERANKER
 
-        reranked_results = rerank_documents(
-            query=query,
-            documents=results,
-            top_k=k
-        )
+        reranked_results = results
+
+        if ENABLE_RERANKER:
+            LOG.info(
+                "Running reranker on %d chunks",
+                len(results)
+            )
+
+            t2 = time.perf_counter()
+            reranked_results = rerank_documents(
+                query=query,
+                documents=results,
+                top_k=k
+            )
+            timings['reranker'] = time.perf_counter() - t2
+        else:
+            LOG.info("Reranker disabled; returning raw retrieval results")
+
+        timings['reranked_count'] = len(reranked_results)
+
+        timings['total'] = time.perf_counter() - start_total
 
         # -----------------------------------
         # Log reranked results
@@ -404,7 +446,16 @@ def retrieve(
             len(reranked_results)
         )
 
-        return reranked_results
+        # Log timing breakdown
+        try:
+            LOG.info("Timing breakdown: %s", timings)
+        except Exception:
+            pass
+
+        return {
+            "results": reranked_results,
+            "timings": timings,
+        }
 
     except Exception as exc:
 

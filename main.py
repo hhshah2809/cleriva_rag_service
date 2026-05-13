@@ -9,6 +9,7 @@ configure_logging(os.getenv("LOG_LEVEL", "INFO"))
 
 from api.upload import router as upload_router
 from api.retrieve import router as retrieve_router
+from api.status import router as status_router
 
 
 app = FastAPI(title="RAG Service")
@@ -57,6 +58,7 @@ app.add_middleware(
 
 app.include_router(upload_router, prefix="/api")
 app.include_router(retrieve_router, prefix="/api")
+app.include_router(status_router, prefix="/api")
 
 
 if __name__ == "__main__":

@@ -8,6 +8,12 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 SUPABASE_TABLE = os.getenv("SUPABASE_TABLE", "documents")
 SUPABASE_QUERY_NAME = os.getenv("SUPABASE_QUERY_NAME", "match_documents")
 
+# Reranker toggle
+ENABLE_RERANKER = os.getenv("ENABLE_RERANKER", "true").lower() in ("1", "true", "yes")
+
+# Default number of candidates to retrieve before reranking
+RETRIEVAL_K_DEFAULT = int(os.getenv("RETRIEVAL_K_DEFAULT", "20"))
+
 AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
 AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
 AZURE_OPENAI_EMBEDDING_DEPLOYMENT = os.getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT")
